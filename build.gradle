@@ -38,6 +38,10 @@ task stage {
     dependsOn 'bootRepackage'
 }
 
+bootRun {
+    systemProperty 'server.port', Integer.getInteger('server.port', 5000)
+}
+
 dependencyManagement {
     imports {
         mavenBom "org.springframework.cloud:spring-cloud-dependencies:Camden.SR3"
