@@ -1,3 +1,8 @@
+import com.bmuschko.gradle.docker.tasks.container.DockerCreateContainer
+import com.bmuschko.gradle.docker.tasks.container.DockerStartContainer
+import com.bmuschko.gradle.docker.tasks.container.DockerStopContainer
+import com.bmuschko.gradle.docker.tasks.image.DockerBuildImage
+
 buildscript {
     ext {
         kotlinVersion = '1.0.6'
@@ -8,6 +13,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
+        classpath group: 'com.bmuschko', name: 'gradle-docker-plugin', version: '3.0.8'
         classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlinVersion}")
     }
@@ -15,6 +21,7 @@ buildscript {
 
 apply plugin: 'kotlin'
 apply plugin: 'org.springframework.boot'
+apply plugin: 'com.bmuschko.docker-remote-api'
 
 apply from: "$projectDir/gradle/versioning.gradle"
 
@@ -54,4 +61,25 @@ task releaseZip(type: Zip, dependsOn: 'bootRepackage') {
     include '*/*'
     archiveName "JAlgoArena-Eureka-${version}.zip"
     destinationDir(file('build/libs'))
+}
+
+task buildMyAppImage(type: DockerBuildImage) {
+    dependsOn assemble
+    inputDir = project.rootDir
+    tag = project.name
+}
+
+task createMyAppContainer(type: DockerCreateContainer) {
+    dependsOn buildMyAppImage
+    targetImageId { buildMyAppImage.getImageId() }
+    portBindings = [":80"]
+}
+
+task startMyAppContainer(type: DockerStartContainer) {
+    dependsOn createMyAppContainer
+    targetContainerId { createMyAppContainer.getContainerId() }
+}
+
+task stopMyAppContainer(type: DockerStopContainer) {
+    targetContainerId { createMyAppContainer.getContainerId() }
 }
